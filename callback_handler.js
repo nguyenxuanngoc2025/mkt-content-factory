@@ -13,13 +13,11 @@
 const https = require('https');
 const path = require('path');
 
-// Config credentials via dotenv
-require('dotenv').config();
-const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TG_CHAT  = process.env.TELEGRAM_CHAT_ID;
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
-const supaHost = SUPABASE_URL.replace('https://', '').split('/')[0];
+// Hardcode credentials (tránh dotenvx inject lỗi)
+const TG_TOKEN = '8670136699:AAGCkkHXcut_2kOcR38F4wKcc75SfWqu9cg';
+const TG_CHAT  = '5884430619';
+const SUPABASE_URL = 'https://studio.ngocnguyenxuan.com/rest/v1';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzIxMjUyMDAsImV4cCI6MTkyOTg5MTYwMH0.EswkDe7Zm8fNHw2pc08qoDYz5ahrk8koVHydLDQQSYU';
 
 // ─── Lịch đăng bài (dựa theo IDENTITY_CONFIG.json) ────────────────────────────
 const SCHEDULE_SLOTS = [
@@ -29,20 +27,42 @@ const SCHEDULE_SLOTS = [
   { day: 0, hour: 20, minute: 30 }, // Chủ nhật 20:30
 ];
 
-function getNextSlot() {
+async function getNextSlot() {
   const now = new Date();
+  
+  // Lấy thời gian scheduled_at xa nhất chưa đăng (status=scheduled, scheduled_at >= now)
+  const queryPath = `/mkt_content_queue?status=eq.scheduled&scheduled_at=gte.${now.toISOString()}&order=scheduled_at.desc&limit=1`;
+  const res = await supabase('GET', queryPath);
+  
+  let baseTime = now;
+  if (res.status === 200 && res.body && res.body.length > 0) {
+    const dbLast = new Date(res.body[0].scheduled_at);
+    if (dbLast > baseTime) baseTime = dbLast;
+  }
+
+  // baseTime là mốc thời gian. Cần tìm slot ngay sau baseTime.
+  // Giả lập timezone VN bằng cách cộng 7 tiếng vào timestamp UTC.
+  const baseTimeVN = new Date(baseTime.getTime() + 7 * 3600 * 1000);
+
   const candidates = [];
-  for (let week = 0; week <= 1; week++) {
+  for (let week = 0; week <= 2; week++) {
     for (const slot of SCHEDULE_SLOTS) {
-      const d = new Date(now);
-      const dayDiff = (slot.day - now.getDay() + 7) % 7 + week * 7;
-      d.setDate(d.getDate() + dayDiff);
-      d.setHours(slot.hour, slot.minute, 0, 0);
-      if (d > now) candidates.push(d);
+      const d = new Date(baseTimeVN.getTime());
+      const currentDay = d.getUTCDay();
+      const dayDiff = (slot.day - currentDay + 7) % 7 + week * 7;
+      
+      d.setUTCDate(d.getUTCDate() + dayDiff);
+      d.setUTCHours(slot.hour, slot.minute, 0, 0);
+      
+      if (d > baseTimeVN) {
+        // d đang ở VN Time. Trừ ngược 7 tiếng để ra UTC thật.
+        candidates.push(new Date(d.getTime() - 7 * 3600 * 1000));
+      }
     }
   }
+  
   candidates.sort((a, b) => a - b);
-  return candidates[0] || new Date(Date.now() + 24 * 60 * 60 * 1000);
+  return candidates[0] || new Date(now.getTime() + 24 * 3600 * 1000);
 }
 
 // ─── HTTP helper ───────────────────────────────────────────────────────────────
@@ -76,7 +96,7 @@ const tg = (method, body) => request(
 );
 
 const supabase = (method, path, body) => request({
-  hostname: supaHost,
+  hostname: 'studio.ngocnguyenxuan.com',
   method,
   path: `/rest/v1${path}`,
   headers: {
@@ -107,7 +127,7 @@ async function handleCallback(cb) {
       break;
 
     case 'SCHED': {
-      const nextSlot = getNextSlot();
+      const nextSlot = await getNextSlot();
       const slotStr = nextSlot.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
       update = {
         status: 'scheduled',
@@ -210,4 +230,3 @@ console.log(`   Bot token: ...${TG_TOKEN?.slice(-10)}`);
     await new Promise(r => setTimeout(r, 500));
   }
 })();
-
