@@ -15,14 +15,14 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
+const FormData = require('form-data');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
-// Config credentials via dotenv
-const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TG_CHAT  = process.env.TELEGRAM_CHAT_ID;
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
-const supaHost = SUPABASE_URL.replace('https://', '').split('/')[0];
+// Hardcode credentials (tránh dotenvx inject lỗi trên VPS)
+const TG_TOKEN = '8670136699:AAGCkkHXcut_2kOcR38F4wKcc75SfWqu9cg';
+const TG_CHAT  = '5884430619';
+const SUPABASE_URL  = 'https://studio.ngocnguyenxuan.com/rest/v1';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzIxMjUyMDAsImV4cCI6MTkyOTg5MTYwMH0.EswkDe7Zm8fNHw2pc08qoDYz5ahrk8koVHydLDQQSYU';
 
 // ─── HTTP helper ───────────────────────────────────────────────────────────────
 function request(opts, body) {
@@ -55,7 +55,7 @@ const tg = (method, body) => request(
 );
 
 const supabase = (method, path, body, extra = {}) => request({
-  hostname: supaHost,
+  hostname: 'studio.ngocnguyenxuan.com',
   method,
   path: `/rest/v1${path}`,
   headers: {
@@ -65,6 +65,33 @@ const supabase = (method, path, body, extra = {}) => request({
     ...extra,
   },
 }, body);
+
+// ─── HTTP multipart helper cho Telegram ───────────────────────────────────────
+function tgSendPhoto(chat_id, image_path, captionStr = '') {
+  return new Promise((resolve, reject) => {
+    const form = new FormData();
+    form.append('chat_id', chat_id);
+    form.append('photo', fs.createReadStream(image_path));
+    if (captionStr) form.append('caption', captionStr);
+    form.append('parse_mode', 'HTML');
+
+    const req = https.request({
+      hostname: 'api.telegram.org',
+      method: 'POST',
+      path: `/bot${TG_TOKEN}/sendPhoto`,
+      headers: form.getHeaders(),
+    }, res => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(d) }); }
+        catch { resolve({ status: res.statusCode, body: d }); }
+      });
+    });
+    req.on('error', reject);
+    form.pipe(req);
+  });
+}
 
 // ─── Inline keyboard ───────────────────────────────────────────────────────────
 function buildKeyboard(post_id) {
@@ -87,6 +114,7 @@ async function sendForReview({ post_id, batch_id, post_type, content_text, image
       batch_id: batch_id || null,
       post_type: post_type || 'Facebook Post',
       content_text,
+      image_url: image_path || null,
       status: 'pending',
       retry_count: 0,
     }, { Prefer: 'resolution=merge-duplicates' });
@@ -101,6 +129,16 @@ async function sendForReview({ post_id, batch_id, post_type, content_text, image
   // Gửi text + keyboard
   const slotLine = slot_label ? `\n📅 <i>Slot: ${slot_label}</i>` : '';
   const caption = `<b>📝 ${post_type || 'Post'}</b>\n<code>${post_id}</code>${slotLine}`;
+
+  // Nếu có image_path, gửi ảnh thành 1 tin nhắn riêng biệt ngay phía trên
+  if (image_path && fs.existsSync(image_path)) {
+    const photoRes = await tgSendPhoto(TG_CHAT, image_path);
+    if (!photoRes.body.ok) {
+      console.error('❌ Gửi ảnh Telegram lỗi:', photoRes.body.description);
+    } else {
+      console.log(`📸 Đã gửi ảnh thumbnail đính kèm.`);
+    }
+  }
 
   const textRes = await tg('sendMessage', {
     chat_id: TG_CHAT,
@@ -130,12 +168,24 @@ async function sendForReview({ post_id, batch_id, post_type, content_text, image
 async function main() {
   const args = process.argv.slice(2);
 
+  let image_path = null;
+  if (args.includes('--image')) {
+    const imgIdx = args.indexOf('--image') + 1;
+    image_path = args[imgIdx];
+  }
+
+  // FORCE IMAGE VALIDATION
+  if (!image_path || !fs.existsSync(image_path)) {
+    console.error('❌ LỖI NGHIÊM TRỌNG: Bắt buộc phải đính kèm ảnh bằng cờ --image <path> và file ảnh phải tồn tại. Hệ thống từ chối lưu bài viết thiếu ảnh tĩnh.');
+    process.exit(1);
+  }
+
   if (args.includes('--text')) {
     // Gửi nhanh inline
     const textIdx = args.indexOf('--text') + 1;
     const content_text = args[textIdx];
     const post_id = `quick_${Date.now()}`;
-    await sendForReview({ post_id, post_type: 'Quick Post', content_text });
+    await sendForReview({ post_id, post_type: 'Quick Post', content_text, image_path });
 
   } else if (args.includes('--file')) {
     // Gửi từ file markdown
@@ -143,7 +193,7 @@ async function main() {
     const filePath = args[fileIdx];
     const content_text = fs.readFileSync(filePath, 'utf-8').trim();
     const post_id = `file_${path.basename(filePath, '.md')}_${Date.now()}`;
-    await sendForReview({ post_id, post_type: 'Post từ file', content_text });
+    await sendForReview({ post_id, post_type: 'Post từ file', content_text, image_path });
 
   } else {
     // Đọc từ Supabase — gửi các bài pending_review chưa có telegram_message_id
@@ -164,4 +214,3 @@ async function main() {
 }
 
 main().catch(console.error);
-
