@@ -18,11 +18,10 @@ const path = require('path');
 const FormData = require('form-data');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
-// Hardcode credentials (tránh dotenvx inject lỗi trên VPS)
-const TG_TOKEN = '8670136699:AAGCkkHXcut_2kOcR38F4wKcc75SfWqu9cg';
-const TG_CHAT  = '5884430619';
-const SUPABASE_URL  = 'https://studio.ngocnguyenxuan.com/rest/v1';
-const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzIxMjUyMDAsImV4cCI6MTkyOTg5MTYwMH0.EswkDe7Zm8fNHw2pc08qoDYz5ahrk8koVHydLDQQSYU';
+const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TG_CHAT  = process.env.TELEGRAM_CHAT_ID;
+const SUPABASE_URL  = process.env.SUPABASE_URL || 'https://studio.ngocnguyenxuan.com/rest/v1';
+const SUPABASE_KEY  = process.env.SUPABASE_KEY;
 
 // ─── HTTP helper ───────────────────────────────────────────────────────────────
 function request(opts, body) {
