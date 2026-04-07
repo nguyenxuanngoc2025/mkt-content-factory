@@ -33,9 +33,18 @@ Người dùng (Sếp/Marketer) chỉ đóng vai trò **Reviewer** (Người duy
 - **RPA Core:** Node.js v20+, Puppeteer.
 - **Hạ tầng chạy (Deployment):** Local máy tính cá nhân hoặc Cloud VPS Ubuntu (PM2 Cronjob).
 
-## 🚀 Hướng dẫn Sử dụng (Documentation)
+## ⚡️ Quick Start (Cài đặt cấp tốc)
+Dự án đã được cấu trúc chuẩn Node.js package. Chỉ cần lấy về và install:
 
-Dự án này cung cấp 2 góc độ hướng dẫn dành cho 2 nhóm đối tượng khác biệt. Bạn thuộc nhóm nào, hãy đọc tài liệu nhóm đó:
+```bash
+git clone https://github.com/nguyenxuanngoc2025/mkt-content-factory.git
+cd mkt-content-factory
+npm install
+```
+
+## 🚀 Hướng dẫn Cài đặt Chuyên sâu (Documentation)
+
+Dự án này cung cấp 2 góc độ hướng dẫn cài đặt biến môi trường (Supabase/Telegram) và chạy tiến trình:
 
 1. 👔 **Dành cho Non-Tech (CEO, Quản lý, Marketer không biết code):**
    👉 Đọc File: [GUIDE_CHO_GIAM_DOC_MARKETING.md](./GUIDE_CHO_GIAM_DOC_MARKETING.md) 
