@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="images/mkt_factory_v6_ultra_minimal_1775529660591.png" width="100%" alt="MKT Content Factory Workflow">
+  <img src="docs/mkt_factory_workspace.jpg" width="100%" alt="MKT Content Factory Workspace">
   <br/>
   <h1>🚀 MKT Content Factory V6</h1>
   <p><strong>Hệ thống Tự động hóa Toàn phần (End-to-End Automation) cho Marketing Cá nhân</strong></p>
@@ -24,6 +24,7 @@ Người dùng (Sếp/Marketer) chỉ đóng vai trò **Reviewer** (Người duy
 - **🧠 Ứng dụng NotebookLM:** Múc (extract) chính xác các insight giá trị từ các mỏ dữ liệu quốc tế.
 - **✍️ Triển khai Nội dung Đa góc nhìn:** AI Agent tự động viết 4 format nội dung khác biệt (Storytelling, Case Study, Insight, Mindset) tuân thủ cực chuẩn quy tắc ngữ điệu thương hiệu (Brand Voice).
 - **🕹 Telegram Approval Hub:** Tích hợp Webhook Long-polling qua Telegram. Bắn thông báo báo cáo trực quan với các thao tác 1-chạm: `[✅ Đăng Ngay]` | `[📅 Lên Lịch]`.
+  <br/><img src="docs/telegram_approval_demo.png" alt="Telegram Approval UI" width="350"/>
 - **👻 Headless FB Publisher:** Script JavaScript chạy ngầm giả lập trình duyệt (Puppeteer + Stealth Plugin), xuyên qua tường rào của Facebook để post Status + tải Hình ảnh/Video hoàn toàn như người thật.
 
 ## 🏗 Kiến trúc Hệ thống
