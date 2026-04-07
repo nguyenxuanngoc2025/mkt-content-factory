@@ -13,11 +13,13 @@
 const https = require('https');
 const path = require('path');
 
-// Hardcode credentials (tránh dotenvx inject lỗi)
-const TG_TOKEN = '<YOUR_TELEGRAM_BOT_TOKEN>';
-const TG_CHAT  = '<YOUR_TELEGRAM_CHAT_ID>';
-const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE/rest/v1';
-const SUPABASE_KEY = '<YOUR_SUPABASE_API_KEY_SERVICE_ROLE>';
+// Config credentials via dotenv
+require('dotenv').config();
+const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TG_CHAT  = process.env.TELEGRAM_CHAT_ID;
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const supaHost = SUPABASE_URL.replace('https://', '').split('/')[0];
 
 // ─── Lịch đăng bài (dựa theo IDENTITY_CONFIG.json) ────────────────────────────
 const SCHEDULE_SLOTS = [
@@ -74,7 +76,7 @@ const tg = (method, body) => request(
 );
 
 const supabase = (method, path, body) => request({
-  hostname: 'YOUR_SUPABASE_HOSTNAME_HERE',
+  hostname: supaHost,
   method,
   path: `/rest/v1${path}`,
   headers: {

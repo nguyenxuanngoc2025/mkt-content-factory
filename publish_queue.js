@@ -9,9 +9,11 @@
  */
 
 const https = require('https');
-const TG_TOKEN = '<YOUR_TELEGRAM_BOT_TOKEN>';
-const TG_CHAT  = '<YOUR_TELEGRAM_CHAT_ID>';
-const SUPABASE_KEY = '<YOUR_SUPABASE_API_KEY_SERVICE_ROLE>';
+require('dotenv').config();
+
+const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TG_CHAT  = process.env.TELEGRAM_CHAT_ID;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
 const isDryRun = process.argv.includes('--dry-run');
 const isScheduled = process.argv.includes('--scheduled');
@@ -50,8 +52,11 @@ const tg = (method, body) => request(
   body
 );
 
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const supaHost = SUPABASE_URL.replace('https://', '').split('/')[0];
+
 const supabase = (method, spath, body) => request({
-  hostname: 'studio.ngocnguyenxuan.com',
+  hostname: supaHost,
   method,
   path: `/rest/v1${spath}`,
   headers: {

@@ -15,13 +15,14 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+require('dotenv').config();
 
-// Hardcode credentials (tránh dotenvx inject lỗi trên VPS)
-const TG_TOKEN = '<YOUR_TELEGRAM_BOT_TOKEN>';
-const TG_CHAT  = '<YOUR_TELEGRAM_CHAT_ID>';
-const SUPABASE_URL  = 'YOUR_SUPABASE_URL_HERE/rest/v1';
-const SUPABASE_KEY  = '<YOUR_SUPABASE_API_KEY_SERVICE_ROLE>';
+// Config credentials via dotenv
+const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TG_CHAT  = process.env.TELEGRAM_CHAT_ID;
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const supaHost = SUPABASE_URL.replace('https://', '').split('/')[0];
 
 // ─── HTTP helper ───────────────────────────────────────────────────────────────
 function request(opts, body) {
@@ -54,7 +55,7 @@ const tg = (method, body) => request(
 );
 
 const supabase = (method, path, body, extra = {}) => request({
-  hostname: 'YOUR_SUPABASE_HOSTNAME_HERE',
+  hostname: supaHost,
   method,
   path: `/rest/v1${path}`,
   headers: {
