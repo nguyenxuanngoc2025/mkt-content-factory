@@ -1,0 +1,25 @@
+{
+  "name": "mkt-content-factory-v6",
+  "version": "1.0.0",
+  "description": "Hệ thống Tự động hóa Toàn phần (End-to-End Automation) cho Marketing Cá nhân",
+  "main": "publish_queue.js",
+  "scripts": {
+    "start": "node publish_queue.js",
+    "send-review": "node send_for_review.js",
+    "webhook": "node callback_handler.js",
+    "test-post": "node fb_poster.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nguyenxuanngoc2025/mkt-content-factory.git"
+  },
+  "author": "Nguyễn Xuân Ngọc",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^16.4.5",
+    "puppeteer": "^22.0.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}
